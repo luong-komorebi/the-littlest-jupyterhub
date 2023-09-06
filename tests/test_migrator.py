@@ -49,7 +49,7 @@ def test_migrate_config(tljh_dir):
         assert f.read() == upgraded_config
 
     # preserved old config
-    backup_config = CONFIG_FILE + f".old.{date.today().isoformat()}"
+    backup_config = f"{CONFIG_FILE}.old.{date.today().isoformat()}"
     assert os.path.exists(backup_config)
     with open(backup_config) as f:
         assert f.read() == duplicate_config

@@ -259,13 +259,11 @@ def set_cull_idle_service(config):
     if cull_config["users"]:
         cull_cmd += ["--cull-users"]
 
-    cull_service = {
+    return {
         "name": "cull-idle",
         "admin": True,
         "command": cull_cmd,
     }
-
-    return cull_service
 
 
 def set_configurator(config):
@@ -279,13 +277,11 @@ def set_configurator(config):
         "jupyterhub_configurator.app",
         f"--Configurator.config_file={HERE}/jupyterhub_configurator_config.py",
     ]
-    configurator_service = {
+    return {
         "name": "configurator",
         "url": "http://127.0.0.1:10101",
         "command": configurator_cmd,
     }
-
-    return configurator_service
 
 
 def update_services(c, config):
@@ -314,7 +310,7 @@ def _merge_dictionaries(a, b, path=None, update=True):
             elif update:
                 a[key] = b[key]
             else:
-                raise Exception("Conflict at %s" % ".".join(path + [str(key)]))
+                raise Exception(f'Conflict at {".".join(path + [str(key)])}')
         else:
             a[key] = b[key]
     return a

@@ -156,11 +156,7 @@ def test_state_permissions(group, readwrite):
     ],
 )
 def test_pip_install(group, allowed):
-    if allowed:
-        context = noop()
-    else:
-        context = pytest.raises(subprocess.CalledProcessError)
-
+    context = noop() if allowed else pytest.raises(subprocess.CalledProcessError)
     python = os.path.join(USER_PREFIX, "bin", "python")
 
     with context:

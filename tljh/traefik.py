@@ -85,14 +85,12 @@ def compute_basic_auth(username, password):
     # generate htpassword
     ht.set_password(username, password)
     hashed_password = str(ht.to_string()).split(":")[1][:-3]
-    return username + ":" + hashed_password
+    return f"{username}:{hashed_password}"
 
 
 def load_extra_config(extra_config_dir):
     extra_configs = sorted(glob(os.path.join(extra_config_dir, "*.toml")))
-    # Load the toml list of files into dicts and merge them
-    config = toml.load(extra_configs)
-    return config
+    return toml.load(extra_configs)
 
 
 def ensure_traefik_config(state_dir):
@@ -111,10 +109,10 @@ def ensure_traefik_config(state_dir):
         template = Template(f.read())
     std_config = template.render(config)
     https = config["https"]
-    letsencrypt = https["letsencrypt"]
-    tls = https["tls"]
     # validate https config
     if https["enabled"]:
+        letsencrypt = https["letsencrypt"]
+        tls = https["tls"]
         if not tls["cert"] and not letsencrypt["email"]:
             raise ValueError(
                 "To enable https, you must set tls.cert+key or letsencrypt.email+domains"

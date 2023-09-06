@@ -45,21 +45,24 @@ def remove_chp():
     """
     Ensure CHP is not running
     """
-    if os.path.exists("/etc/systemd/system/configurable-http-proxy.service"):
-        if systemd.check_service_active("configurable-http-proxy.service"):
-            try:
-                systemd.stop_service("configurable-http-proxy.service")
-            except subprocess.CalledProcessError:
-                logger.info("Cannot stop configurable-http-proxy...")
-        if systemd.check_service_enabled("configurable-http-proxy.service"):
-            try:
-                systemd.disable_service("configurable-http-proxy.service")
-            except subprocess.CalledProcessError:
-                logger.info("Cannot disable configurable-http-proxy...")
+    if not os.path.exists(
+        "/etc/systemd/system/configurable-http-proxy.service"
+    ):
+        return
+    if systemd.check_service_active("configurable-http-proxy.service"):
         try:
-            systemd.uninstall_unit("configurable-http-proxy.service")
+            systemd.stop_service("configurable-http-proxy.service")
         except subprocess.CalledProcessError:
-            logger.info("Cannot uninstall configurable-http-proxy...")
+            logger.info("Cannot stop configurable-http-proxy...")
+    if systemd.check_service_enabled("configurable-http-proxy.service"):
+        try:
+            systemd.disable_service("configurable-http-proxy.service")
+        except subprocess.CalledProcessError:
+            logger.info("Cannot disable configurable-http-proxy...")
+    try:
+        systemd.uninstall_unit("configurable-http-proxy.service")
+    except subprocess.CalledProcessError:
+        logger.info("Cannot uninstall configurable-http-proxy...")
 
 
 def ensure_jupyterhub_service(prefix):
@@ -161,9 +164,6 @@ def ensure_user_environment(user_requirements_txt_file):
 
     miniconda_old_version = "4.5.4"
     miniconda_new_version = "4.7.10"
-    # Install mambaforge using an installer from
-    # https://github.com/conda-forge/miniforge/releases
-    mambaforge_new_version = "4.10.3-7"
     # Check system architecture, set appropriate installer checksum
     if os.uname().machine == "aarch64":
         installer_sha256 = (
@@ -187,9 +187,11 @@ def ensure_user_environment(user_requirements_txt_file):
         conda_version = "4.8.1"
     elif conda.check_miniconda_version(USER_ENV_PREFIX, miniconda_old_version):
         conda_version = "4.5.8"
-    # If no prior miniconda installation is found, we can install a newer version
     else:
         logger.info("Downloading & setting up user environment...")
+        # Install mambaforge using an installer from
+        # https://github.com/conda-forge/miniforge/releases
+        mambaforge_new_version = "4.10.3-7"
         installer_url = "https://github.com/conda-forge/miniforge/releases/download/{v}/Mambaforge-{v}-Linux-{arch}.sh".format(
             v=mambaforge_new_version, arch=os.uname().machine
         )
@@ -201,11 +203,7 @@ def ensure_user_environment(user_requirements_txt_file):
 
     conda.ensure_conda_packages(
         USER_ENV_PREFIX,
-        [
-            # Conda's latest version is on conda much more so than on PyPI.
-            "conda==" + conda_version,
-            "mamba==" + mambaforge_mamba_version,
-        ],
+        [f"conda=={conda_version}", f"mamba=={mambaforge_mamba_version}"],
     )
 
     conda.ensure_pip_requirements(
@@ -344,23 +342,19 @@ def run_plugin_actions(plugin_manager):
     Run installer hooks defined in plugins
     """
     hook = plugin_manager.hook
-    # Install apt packages
-    apt_packages = list(set(itertools.chain(*hook.tljh_extra_apt_packages())))
-    if apt_packages:
+    if apt_packages := list(
+        set(itertools.chain(*hook.tljh_extra_apt_packages()))
+    ):
         logger.info(
-            "Installing {} apt packages collected from plugins: {}".format(
-                len(apt_packages), " ".join(apt_packages)
-            )
+            f'Installing {len(apt_packages)} apt packages collected from plugins: {" ".join(apt_packages)}'
         )
         apt.install_packages(apt_packages)
 
-    # Install hub pip packages
-    hub_pip_packages = list(set(itertools.chain(*hook.tljh_extra_hub_pip_packages())))
-    if hub_pip_packages:
+    if hub_pip_packages := list(
+        set(itertools.chain(*hook.tljh_extra_hub_pip_packages()))
+    ):
         logger.info(
-            "Installing {} hub pip packages collected from plugins: {}".format(
-                len(hub_pip_packages), " ".join(hub_pip_packages)
-            )
+            f'Installing {len(hub_pip_packages)} hub pip packages collected from plugins: {" ".join(hub_pip_packages)}'
         )
         conda.ensure_pip_packages(
             HUB_ENV_PREFIX,
@@ -368,23 +362,19 @@ def run_plugin_actions(plugin_manager):
             upgrade=True,
         )
 
-    # Install conda packages
-    conda_packages = list(set(itertools.chain(*hook.tljh_extra_user_conda_packages())))
-    if conda_packages:
+    if conda_packages := list(
+        set(itertools.chain(*hook.tljh_extra_user_conda_packages()))
+    ):
         logger.info(
-            "Installing {} user conda packages collected from plugins: {}".format(
-                len(conda_packages), " ".join(conda_packages)
-            )
+            f'Installing {len(conda_packages)} user conda packages collected from plugins: {" ".join(conda_packages)}'
         )
         conda.ensure_conda_packages(USER_ENV_PREFIX, conda_packages)
 
-    # Install pip packages
-    user_pip_packages = list(set(itertools.chain(*hook.tljh_extra_user_pip_packages())))
-    if user_pip_packages:
+    if user_pip_packages := list(
+        set(itertools.chain(*hook.tljh_extra_user_pip_packages()))
+    ):
         logger.info(
-            "Installing {} user pip packages collected from plugins: {}".format(
-                len(user_pip_packages), " ".join(user_pip_packages)
-            )
+            f'Installing {len(user_pip_packages)} user pip packages collected from plugins: {" ".join(user_pip_packages)}'
         )
         conda.ensure_pip_packages(
             USER_ENV_PREFIX,
@@ -461,8 +451,6 @@ def main():
             print("Progress page server stopped successfully.")
         except Exception as e:
             logger.error(f"Couldn't stop the progress page server. Exception was {e}.")
-            pass
-
     ensure_jupyterhub_service(HUB_ENV_PREFIX)
     ensure_jupyterhub_running()
     ensure_symlinks(HUB_ENV_PREFIX)

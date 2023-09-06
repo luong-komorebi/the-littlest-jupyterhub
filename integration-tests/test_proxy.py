@@ -36,15 +36,13 @@ def send_request(url, max_sleep, validate_cert=True, username=None, password=Non
             break
         except Exception as e:
             print(e)
-            pass
-
     return resp
 
 
 def test_manual_https(preserve_config):
     ssl_dir = "/etc/tljh-ssl-test"
-    key = ssl_dir + "/ssl.key"
-    cert = ssl_dir + "/ssl.cert"
+    key = f"{ssl_dir}/ssl.key"
+    cert = f"{ssl_dir}/ssl.cert"
     os.makedirs(ssl_dir, exist_ok=True)
     os.chmod(ssl_dir, 0o600)
     # generate key and cert

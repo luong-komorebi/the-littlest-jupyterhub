@@ -34,7 +34,7 @@ def add_source(name, source_url, section):
         .strip()
     )
     line = f"deb {source_url} {distro} {section}\n"
-    with open(os.path.join("/etc/apt/sources.list.d/", name + ".list"), "a+") as f:
+    with open(os.path.join("/etc/apt/sources.list.d/", f"{name}.list"), "a+") as f:
         # Write out deb line only if it already doesn't exist
         f.seek(0)
         if line not in f.read():

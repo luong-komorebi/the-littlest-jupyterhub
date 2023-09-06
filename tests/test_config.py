@@ -16,7 +16,7 @@ def test_set_no_mutate():
 
     new_conf = config.set_item_in_config(conf, "a.b", "c")
     assert new_conf["a"]["b"] == "c"
-    assert conf == {}
+    assert not conf
 
 
 def test_set_one_level():

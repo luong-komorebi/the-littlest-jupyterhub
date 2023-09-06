@@ -147,11 +147,11 @@ def remove_item_from_config(config, property_path, value):
                 raise ValueError(f"{property_path} is not a list")
             cur_part = cur_part[cur_path]
             cur_part.remove(value)
-        else:
-            if cur_path not in cur_part or not _is_dict(cur_part[cur_path]):
-                raise ValueError(f"{property_path} does not exist in config!")
+        elif cur_path in cur_part and _is_dict(cur_part[cur_path]):
             cur_part = cur_part[cur_path]
 
+        else:
+            raise ValueError(f"{property_path} does not exist in config!")
     return config_copy
 
 
@@ -322,7 +322,7 @@ def main(argv=None):
     try:
         init_logging()
     except Exception as e:
-        print(str(e))
+        print(e)
         print("Perhaps you didn't use `sudo -E`?")
 
     argparser = argparse.ArgumentParser()

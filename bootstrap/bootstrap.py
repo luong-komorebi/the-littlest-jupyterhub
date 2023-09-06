@@ -206,7 +206,7 @@ def ensure_host_system_can_install_tljh():
     if distro != "ubuntu":
         print("The Littlest JupyterHub currently supports Ubuntu Linux only")
         sys.exit(1)
-    elif float(version) < 18.04:
+    elif version < 18.04:
         print("The Littlest JupyterHub requires Ubuntu 18.04 or higher")
         sys.exit(1)
 
@@ -266,10 +266,7 @@ def _find_matching_version(all_versions, requested):
     if requested == "latest":
         return sorted_versions[0]
     components = len(requested)
-    for v in sorted_versions:
-        if v[:components] == requested:
-            return v
-    return None
+    return next((v for v in sorted_versions if v[:components] == requested), None)
 
 
 def _resolve_git_version(version):
@@ -299,7 +296,7 @@ def _resolve_git_version(version):
     for line in out.splitlines():
         m = re.match(r"(?P<sha>[a-f0-9]+)\s+refs/tags/(?P<tag>[\S]+)$", line)
         if not m:
-            raise Exception("Unexpected git ls-remote output: {}".format(line))
+            raise Exception(f"Unexpected git ls-remote output: {line}")
         tag = m.group("tag")
         if tag == version:
             return tag
@@ -313,12 +310,10 @@ def _resolve_git_version(version):
         requested = "latest"
     else:
         requested = tuple(int(v) for v in version.split("."))
-    found = _find_matching_version(all_versions, requested)
-    if not found:
-        raise Exception(
-            "No version matching {} found {}".format(version, sorted(all_versions))
-        )
-    return ".".join(str(f) for f in found)
+    if found := _find_matching_version(all_versions, requested):
+        return ".".join(str(f) for f in found)
+    else:
+        raise Exception(f"No version matching {version} found {sorted(all_versions)}")
 
 
 def main():
